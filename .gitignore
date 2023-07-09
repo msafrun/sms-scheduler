@@ -1,0 +1,6 @@
+node_modules
+/ecosystem.config.js
+ecosystem.config.js*
+/test.js
+/.env
+.env*
