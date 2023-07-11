@@ -4,6 +4,10 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const { scheduleRouter } = require("./routes");
+const {
+  runTimeSmsScheduler,
+  smsSchedulerProcessor,
+} = require("./service/scheduler/smsScheduler");
 
 const app = express();
 
@@ -23,6 +27,9 @@ app.use("/api/v1/schedule/", scheduleRouter);
 app.use(function (req, res, next) {
   next(createError(404));
 });
+
+// runTimeSmsScheduler();
+// smsSchedulerProcessor()
 
 // error handler
 app.use(function (err, req, res, next) {
