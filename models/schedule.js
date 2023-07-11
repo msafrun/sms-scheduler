@@ -10,6 +10,10 @@ module.exports = (sequelize, DataTypes) => {
       Schedule.belongsTo(models.Recepient, {
         foreignKey: "recepientsId",
       });
+
+      Schedule.hasMany(models.SchedulesHistories, {
+        foreignKey: "schedulesId",
+      });
     }
   }
 

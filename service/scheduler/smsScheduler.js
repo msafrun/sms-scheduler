@@ -1,6 +1,13 @@
 const { default: axios } = require("axios");
-const { Recepient, SmsScheduler, Schedule } = require("../../models");
+const {
+  Recepient,
+  SmsScheduler,
+  Schedule,
+  SchedulesHistories,
+} = require("../../models");
 const { Op } = require("sequelize");
+
+const api_url = process.env.BASE_URL;
 
 module.exports = {
   runTimeSmsScheduler: async () => {
@@ -40,7 +47,7 @@ module.exports = {
 
           const { data } = await axios({
             method: "POST",
-            url: "http://kr8tif.lawaapp.com:1338/api",
+            url: api_url,
             data: {
               dnis: formattedToString,
               message: getAllSmsScheduler.message,
@@ -116,7 +123,7 @@ module.exports = {
         }
       }
 
-      return "done!";
+      return "runTimeSmsScheduler done!";
     } catch (error) {
       console.log("<<<<<<< error runTimeSmsScheduler", error);
     }
@@ -124,6 +131,133 @@ module.exports = {
 
   smsSchedulerProcessor: async () => {
     try {
+      // get not delivered and is accepted status to be processed TODO: dynamic
+      const getAllSchedule = await Schedule.findAll({
+        where: {
+          [Op.or]: [{ isDelivered: false }, { isAccepted: true }],
+        },
+        include: [
+          {
+            model: Recepient,
+            attributes: ["id", "phoneNumber"],
+          },
+          {
+            model: SmsScheduler,
+            attributes: ["id", "message"],
+          },
+        ],
+      });
+
+      //   console.log(getAllSchedule.length);
+
+      //   return "here";
+
+      if (getAllSchedule.length > 0) {
+        for (let i = 0; i < getAllSchedule.length; i++) {
+          const elGetAllSchedule = getAllSchedule[i];
+
+          // if status is not delivered and not accepted
+          if (!elGetAllSchedule.isDelivered && !elGetAllSchedule.isAccepted) {
+            const { data } = await axios({
+              method: "POST",
+              url: api_url,
+              data: {
+                dnis: elGetAllSchedule.Recepient.phoneNumber,
+                message: elGetAllSchedule.SmsScheduler.message,
+              },
+            });
+
+            if (data) {
+              await Schedule.update(
+                {
+                  messageId: data.message_id,
+                },
+                {
+                  where: {
+                    recepientsId: elGetAllSchedule.Recepient.id,
+                    smsSchedulersId: elGetAllSchedule.SmsScheduler.id,
+                  },
+                }
+              );
+
+              const getStatusApi = await axios({
+                method: "GET",
+                url: api_url + `?messageId=${data.message_id}`,
+              });
+
+              if (getStatusApi.data.status === "DELIVRD") {
+                await Schedule.update(
+                  {
+                    isDelivered: true,
+                    isAccepted: false,
+                  },
+                  {
+                    where: {
+                      recepientsId: elGetAllSchedule.Recepient.id,
+                      smsSchedulersId: elGetAllSchedule.SmsScheduler.id,
+                    },
+                  }
+                );
+              }
+
+              await SchedulesHistories.create({
+                schedulesId: elGetAllSchedule.id,
+                messageId: data.message_id,
+                status: getStatusApi.data.status,
+                time: getStatusApi.data.delivery_time,
+              });
+            }
+          }
+
+          // if status is accepted
+          if (elGetAllSchedule.isAccepted) {
+            const getStatusApi = await axios({
+              method: "GET",
+              url: api_url + `?messageId=${getAllSchedule[i].messageId}`,
+            });
+
+            if (
+              getStatusApi.data.status !== "ACCEPTD" &&
+              getStatusApi.data.status !== "DELIVRD"
+            ) {
+              await Schedule.update(
+                {
+                  isDelivered: false,
+                  isAccepted: false,
+                },
+                {
+                  where: {
+                    messageId: getAllSchedule[i].messageId,
+                  },
+                }
+              );
+            }
+
+            if (getStatusApi.data.status === "DELIVRD") {
+              await Schedule.update(
+                {
+                  isDelivered: true,
+                  isAccepted: false,
+                },
+                {
+                  where: {
+                    messageId: getAllSchedule[i].messageId,
+                  },
+                }
+              );
+            }
+
+            await SchedulesHistories.create({
+              schedulesId: elGetAllSchedule.id,
+              messageId: getAllSchedule[i].messageId,
+              status: getStatusApi.data.status,
+              time: getStatusApi.data.delivery_time,
+            });
+          }
+        }
+      }
+
+      return "smsSchedulerProcessor done!";
     } catch (error) {
       console.log("<<<<<<< error smsSchedulerProcessor", error);
     }
