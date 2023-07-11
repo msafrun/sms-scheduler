@@ -2,16 +2,16 @@
 const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
-  class Recepient extends Model {
+  class SmsScheduler extends Model {
     static associate(models) {
-      Recepient.belongsToMany(models.SmsScheduler, {
+      SmsScheduler.belongsToMany(models.Recepient, {
         through: models.Schedule,
-        foreignKey: "recepientsId",
+        foreignKey: "smsSchedulersId",
       });
     }
   }
 
-  Recepient.init(
+  SmsScheduler.init(
     {
       id: {
         allowNull: false,
@@ -19,17 +19,20 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         type: DataTypes.INTEGER,
       },
-      phoneNumber: {
-        type: DataTypes.STRING,
+      runtime: {
+        type: DataTypes.DATE,
+      },
+      message: {
+        type: DataTypes.TEXT,
       },
     },
     {
       sequelize,
-      modelName: "Recepient",
-      tableName: "Recepients",
+      modelName: "SmsScheduler",
+      tableName: "SmsSchedulers",
       timestamps: true,
     }
   );
 
-  return Recepient;
+  return SmsScheduler;
 };
