@@ -1,18 +1,17 @@
 const moment = require("moment/moment");
-const { Schedule } = require("../models");
+const { SmsScheduler } = require("../models");
 
 module.exports = {
   addSchedule: async (req, cb) => {
-    const { runtime, message, status } = req.body;
+    const { runtime, message } = req.body;
     try {
-      if (!runtime || !message || !status) {
-        return cb("runtime || message || status body is missing!");
+      if (!runtime || !message) {
+        return cb("runtime || message body is missing!");
       }
 
-      const addNewSchedule = await Schedule.create({
+      const addNewSchedule = await SmsScheduler.create({
         runtime,
         message,
-        status,
       });
 
       if (addNewSchedule) {
@@ -25,7 +24,7 @@ module.exports = {
 
   getAllSchedule: async (req, cb) => {
     try {
-      const getData = await Schedule.findAll({});
+      const getData = await SmsScheduler.findAll({});
 
       //   console.log(getData);
 
@@ -35,7 +34,6 @@ module.exports = {
             id: v.id,
             runtime: moment(v.runtime).format("YYYY-MM-DD HH:mm:ss"),
             message: v.message,
-            status: v.status,
             createdAt: v.createdAt,
             updatedAt: v.updatedAt,
           };

@@ -10,6 +10,8 @@ const {
   smsSchedulerProcessor,
 } = require("./service/scheduler/smsScheduler");
 
+const cron = require("node-cron");
+
 const app = express();
 
 // view engine setup
@@ -22,7 +24,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/api/v1/schedule/", scheduleRouter);
+app.use("/api/v1/", scheduleRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -31,6 +33,10 @@ app.use(function (req, res, next) {
 
 // runTimeSmsScheduler();
 // smsSchedulerProcessor();
+
+cron.schedule("0 8 * * 1", async function () {
+  smsSchedulerProcessor();
+});
 
 // error handler
 app.use(function (err, req, res, next) {
