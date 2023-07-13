@@ -85,6 +85,13 @@ module.exports = {
         };
       }
 
+      if (
+        status &&
+        !["ACCEPTD", "DELIVRD", "UNDELIV", "UNKNOWN"].includes(status)
+      ) {
+        return cb("status is not between ACCEPTD, DELIVRD, UNDELIV, UNKNOWN");
+      }
+
       if (status) {
         opt.where.status = status;
       }
