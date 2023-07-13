@@ -2,6 +2,7 @@ const express = require("express");
 const {
   addSchedule,
   getAllSchedule,
+  getListSms,
 } = require("../service/serviceSmsScheduler");
 const { addRecepient } = require("../service/serviceRecepient");
 const router = express.Router();
@@ -40,6 +41,22 @@ router.post("/recepient", async (req, res) => {
 
 router.get("/schedule", async (req, res) => {
   await getAllSchedule(req, (error, result) => {
+    if (error) {
+      res.status(400).send({
+        status: 400,
+        message: error,
+      });
+    } else {
+      res.status(200).send({
+        status: 200,
+        result,
+      });
+    }
+  });
+});
+
+router.get("/listSms", async (req, res) => {
+  await getListSms(req, (error, result) => {
     if (error) {
       res.status(400).send({
         status: 400,
